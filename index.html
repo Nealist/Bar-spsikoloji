@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Soruluk İnteraktif Psikoloji Testi</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --primary: #3498db;
+            --correct: #2ecc71;
+            --incorrect: #e74c3c;
+            --info-bg: #eef7fc;
+            --info-border: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        h1 { margin: 0 0 10px 0; color: #2c3e50; }
+        p { margin: 0; color: #7f8c8d; }
+
+        .question-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .question-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .option-btn.correct {
+            background-color: #d4edda !important;
+            border-color: var(--correct) !important;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .option-btn.incorrect {
+            background-color: #f8d7da !important;
+            border-color: var(--incorrect) !important;
+            color: #721c24;
+        }
+
+        .explanation {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: var(--info-bg);
+            border-left: 4px solid var(--info-border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .explanation.visible {
+            display: block;
+        }
+
+        .score-board {
+            position: sticky;
+            top: 20px;
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>100 Soruluk Psikoloji Testi</h1>
+        <p>Cevaplamak için şıklara tıklayın. Anında geri bildirim ve detaylı açıklama alacaksınız.</p>
+    </header>
+
+    <div class="score-board">
+        <span>Doğru: <b id="correct-count">0</b></span>
+        <span>Yanlış: <b id="incorrect-count">0</b></span>
+        <span>Kalan: <b id="remaining-count">100</b></span>
+    </div>
+
+    <div id="quiz-container"></div>
+</div>
+
+<script>
+const quizData = [
+    { q: "1. Psikolojinin bir bilim olarak kabul edilmesinde 1879 yılında Leipzig Üniversitesinde ilk psikoloji laboratuvarını kuran araştırmacı kimdir?", options: ["A) Sigmund Freud", "B) Wilhelm Wundt", "C) William James", "D) John B. Watson", "E) Ivan Pavlov"], answer: 1, exp: "Açıklama: Wilhelm Wundt, 1879'da kurduğu ilk psikoloji laboratuvarı ile deneysel psikolojinin ve bağımsız psikoloji biliminin kurucusu kabul edilir." },
+    { q: "2. İçebakış yöntemini kullanarak zihnin yapısal ögelerini inceleyen Yapısalcılık ekolünün temsilcisi kimdir?", options: ["A) Edward Titchener", "B) B.F. Skinner", "C) Carl Rogers", "D) Abraham Maslow", "E) Jean Piaget"], answer: 0, exp: "Açıklama: Edward Titchener, Wundt'un fikirlerini Amerika'ya taşıyarak zihnin öğelerini içebakışla inceleyen Yapısalcılık ekolünü kurmuştur." },
+    { q: "3. Zihnin ne olduğundan ziyade çevreye uyum sağlama işlevine odaklanan ekol hangisidir?", options: ["A) Davranışçılık", "B) Psikoanaliz", "C) İşlevselcilik (Functionalism)", "D) Gestalt", "E) Hümanizm"], answer: 2, exp: "Açıklama: William James tarafından savunulan İşlevselcilik, zihnin yapısından çok uyum sağlama işlevini inceler." },
+    { q: "4. Doğrudan gözlenebilir ve ölçülebilir davranışlara odaklanan ekol hangisidir?", options: ["A) Davranışçılık", "B) Bilişsel Psikoloji", "C) Hümanistik Psikoloji", "D) Nörobiyolojik Yaklaşım", "E) Varoluşçu Psikoloji"], answer: 0, exp: "Açıklama: Watson ve Skinner öncülüğündeki Davranışçılık, zihinsel süreçleri reddedip sadece gözlenebilir davranışları inceler." },
+    { q: "5. Bilinç dışı çatışmaları ve çocukluk yaşantılarını temel alan yaklaşım hangisidir?", options: ["A) Bilişsel Ekol", "B) Psikoanalitik Yaklaşım", "C) Biyolojik Yaklaşım", "D) Evrimsel Yaklaşım", "E) Sosyokültürel Yaklaşım"], answer: 1, exp: "Açıklama: Sigmund Freud'un Psikoanalitik yaklaşımı bilinçdışı güdüler ve çocukluk anılarını merkeze alır." },
+    { q: "6. 'Bütün, parçaların toplamından farklıdır' ilkesiyle algıyı inceleyen ekol hangisidir?", options: ["A) Gestalt Psikolojisi", "B) Yapısalcılık", "C) İşlevselcilik", "D) Davranışçılık", "E) Bağlantıcılık"], answer: 0, exp: "Açıklama: Gestalt psikolojisi algının bir bütün olarak organize olduğunu savunur." },
+    { q: "7. İnsan potansiyelini, özgür iradeyi ve kendini gerçekleştirmeyi vurgulayan yaklaşım hangisidir?", options: ["A) Hümanistik Yaklaşım", "B) Psikanaliz", "C) Davranışçılık", "D) Nörobiyolojik Yaklaşım", "E) Yapısalcılık"], answer: 0, exp: "Açıklama: Maslow ve Rogers'ın temsil ettiği Hümanizm, insanın özgür iradesine ve kendini gerçekleştirme potansiyeline odaklanır." },
+    { q: "8. Hangisinde neden-sonuç ilişkisi (nedensellik) kurulabilir?", options: ["A) Doğal Gözlem", "B) Korelasyonel Araştırma", "C) Deneysel Yöntem", "D) Vaka İncelemesi", "E) Anket Yöntemi"], answer: 2, exp: "Açıklama: Yalnızca deneysel yöntemde değişkenler kontrol edilerek doğrudan nedensellik ilişkisi kurulabilir." },
+    { q: "9. Deneyde araştırmacı tarafından manipüle edilen değişken hangisidir?", options: ["A) Bağımlı Değişken", "B) Bağımsız Değişken", "C) Kontrol Değişkeni", "D) Karıştırıcı Değişken", "E) Ara Değişken"], answer: 1, exp: "Açıklama: Bağımsız değişken, araştırmacının değiştirdiği/yönettiği 'neden' değişkenidir." },
+    { q: "10. İki değişken arasındaki ilişkiyi inceleyen ve -1.00 ile +1.00 arası değer alan ölçüt hangisidir?", options: ["A) Varyans", "B) Standart Sapma", "C) Korelasyon Katsayısı", "D) Mod", "E) Medyan"], answer: 2, exp: "Açıklama: Korelasyon katsayısı (r) iki değişken arasındaki ilişkinin yönünü ve gücünü gösterir." },
+
+    { q: "11. Nöron gövdesinden çıkan ve elektriksel uyarıyı diğer hücrelere ileten uzun uzantı nedir?", options: ["A) Dendrit", "B) Akson", "C) Miyelin kılıf", "D) Sinaps", "E) Ranvier boğumu"], answer: 1, exp: "Açıklama: Akson sinyali hücre gövdesinden alır ve diğer hücrelere iletir." },
+    { q: "12. Nöronların aksonlarını kaplayarak sinirsel iletim hızını artıran tabaka hangisidir?", options: ["A) Miyelin Kılıf", "B) Glia", "C) Sinaptik Kese", "D) Nörotransmitter", "E) Dendrit Ucu"], answer: 0, exp: "Açıklama: Miyelin kılıf yağlı bir yalıtım tabakasıdır ve aksiyon potansiyeli iletimini ciddi oranda hızlandırır." },
+    { q: "13. Aksiyon potansiyeli sırasında zar potansiyelinin negatiften pozitife değişmesine ne denir?", options: ["A) Hiperpolarizasyon", "B) Depolarizasyon", "C) Repolarizasyon", "D) Dinlenme Potansiyeli", "E) Refrakter Dönem"], answer: 1, exp: "Açıklama: Sodyum iyonlarının içeri girmesiyle hücre içinin pozitifleşmesi sürecine depolarizasyon denir." },
+    { q: "14. Nöronun dinlenme potansiyeli değeri yaklaşık kaç mV'dur?", options: ["A) 0 mV", "B) -70 mV", "C) +40 mV", "D) -55 mV", "E) +100 mV"], answer: 1, exp: "Açıklama: Bir nöron uyarılmadığı dinlenme durumundayken iç tarafı dışarıya göre -70 mV potansiyele sahiptir." },
+    { q: "15. İki nöron arasındaki iletişimin gerçekleştiği mikroskobik boşluğa ne ad verilir?", options: ["A) Akson Tepesi", "B) Sinaptik Yarık (Sinaps)", "C) Ranvier Boğumu", "D) Hücre Gövdesi", "E) İyon Kanalı"], answer: 1, exp: "Açıklama: İki nöron birbiriyle fiziksel olarak temas etmez; aralarındaki boşluğa sinaps denir." },
+    { q: "16. Hafıza ve öğrenmede rol oynayan, Alzheimer'da eksilen nörotransmitter hangisidir?", options: ["A) Dopamin", "B) Asetilkolin (ACh)", "C) Serotonin", "D) GABA", "E) Endorfin"], answer: 1, exp: "Açıklama: Asetilkolin bellekte hayati rol oynar ve kaybı Alzheimer hastalığıyla doğrudan ilişkilidir." },
+    { q: "17. Ödül, haz ve motor kontrolle ilişkili; eksikliği Parkinson'a yol açan nörotransmitter hangisidir?", options: ["A) Dopamin", "B) Serotonin", "C) Glutamat", "D) GABA", "E) Noradrenalin"], answer: 0, exp: "Açıklama: Dopamin haz ve hareket kontrolünde temeldir; eksikliği Parkinson, fazlalığı Şizofreni ile ilişkilidir." },
+    { q: "18. Merkezi sinir sisteminin ana önleyici (inhibitör) nörotransmitteri hangisidir?", options: ["A) Glutamat", "B) GABA", "C) Dopamin", "D) Asetilkolin", "E) Histamin"], answer: 1, exp: "Açıklama: GABA beyinde nöronal uyarılabilirliği baskılayan ana engelleyici kimyasaldır." },
+    { q: "19. Merkezi sinir sisteminin ana uyarıcı (eksitatör) nörotransmitteri hangisidir?", options: ["A) Glutamat", "B) Serotonin", "C) GABA", "D) Endorfin", "E) Glikoz"], answer: 0, exp: "Açıklama: Glutamat beynin ana uyarıcı nörotransmitteridir ve öğrenmede kritik role sahiptir." },
+    { q: "20. Beyin ve omurilikten oluşan sinir sistemi bölümü hangisidir?", options: ["A) Çevresel Sinir Sistemi", "B) Otonom Sinir Sistemi", "C) Merkezi Sinir Sistemi", "D) Sempatik Sinir Sistemi", "E) Parasempatik Sinir Sistemi"], answer: 2, exp: "Açıklama: Beyin ve omurilik birleşerek Merkezi Sinir Sistemi'ni (MSS) meydana getirir." },
+
+    { q: "21. 'Savaş ya da kaç' tepkisini başlatan otonom sinir sistemi kanadı hangisidir?", options: ["A) Sempatik Sinir Sistemi", "B) Parasempatik Sinir Sistemi", "C) Somatik Sinir Sistemi", "D) Merkezi Sinir Sistemi", "E) Enterik Sinir Sistemi"], answer: 0, exp: "Açıklama: Sempatik sistem stres anında vücudu uyarır, nabzı ve solunumu hızlandırır." },
+    { q: "22. Vücudu sakinleştiren 'dinlen ve sindir' durumuna getiren sistem hangisidir?", options: ["A) Sempatik Sinir Sistemi", "B) Parasempatik Sinir Sistemi", "C) Motor Sinir Sistemi", "D) Duyusal Sinir Sistemi", "E) Somatik Sinir Sistemi"], answer: 1, exp: "Açıklama: Parasempatik sistem vücut kaynaklarını korur, kalp atışını yavaşlatır ve sindirimi başlatır." },
+    { q: "23. Koku hariç tüm duyusal bilgilerin kortekse yönlendirildiği dağıtım merkezi hangisidir?", options: ["A) Hipotalamus", "B) Talamus", "C) Amigdala", "D) Hipokampus", "E) Beyincik"], answer: 1, exp: "Açıklama: Talamus beynin santral santralidir; koku hariç tüm duyular önce talamusa gelir." },
+    { q: "24. Açlık, susuzluk, vücut sıcaklığı (homeostazis) ve hormon sistemini kontrol eden yapı hangisidir?", options: ["A) Hipotalamus", "B) Beyincik", "C) Bazal Gangliyonlar", "D) Talamus", "E) Pons"], answer: 0, exp: "Açıklama: Hipotalamus iç dengeyi (homeostazis) korur ve hipofiz bezini yönetir." },
+    { q: "25. Korku ve öfke gibi duygusal tepkilerin işlendiği limbik sistem yapısı hangisidir?", options: ["A) Hipokampus", "B) Amigdala", "C) Beyin Sapı", "D) Korpus Kallosum", "E) Ön Lob"], answer: 1, exp: "Açıklama: Amigdala temel duyguların, özellikle de korku ve tehditlerin işlendiği merkezdir." },
+    { q: "26. Yeni anıların uzun süreli belleğe aktarılmasında kritik rol oynayan yapı hangisidir?", options: ["A) Amigdala", "B) Hipokampus", "C) Talamus", "D) Pons", "E) Medulla"], answer: 1, exp: "Açıklama: Hipokampus yeni bilgilerin kalıcı belleğe aktarılmasında (konsolidasyon) vazgeçilmezdir." },
+    { q: "27. Motor koordinasyon, denge ve hareketlerin akıcılığından sorumlu yapı hangisidir?", options: ["A) Beyincik (Cerebellum)", "B) Medulla Oblongata", "C) Hipofiz", "D) Beyin Korteksi", "E) Talamus"], answer: 0, exp: "Açıklama: Beyincik dengemizi ve hassas motor koordinasyonumuzu sağlar." },
+    { q: "28. Beynin iki yarıküresini birbirine bağlayan sinir lifi demeti hangisidir?", options: ["A) Korpus Kallosum", "B) Akson Demeti", "C) Optik Kiyazma", "D) Serebral Korteks", "E) Retiküler Formasyon"], answer: 0, exp: "Açıklama: Korpus kallosum sağ ve sol hemisfer arasında iletişim sağlayan köprüdür." },
+    { q: "29. Karar verme, planlama ve kişilik ile ilişkili olan beyin lobu hangisidir?", options: ["A) Oksipital Lob", "B) Temporal Lob", "C) Frontal Lob", "D) Parietal Lob", "E) Serebellum"], answer: 2, exp: "Açıklama: Frontal lob (ön lob) yüksek seviyeli bilişsel işlevleri ve kişiliği yönetir." },
+    { q: "30. Görsel bilgilerin işlendiği temel beyin lobu hangisidir?", options: ["A) Frontal Lob", "B) Parietal Lob", "C) Oksipital Lob", "D) Temporal Lob", "E) İnsula"], answer: 2, exp: "Açıklama: Oksipital lob beynin arka kısmında yer alır ve görme duyusunu işler." },
+
+    { q: "31. İşitme ve dilin anlaşılması (Wernicke) ile ilişkili beyin lobu hangisidir?", options: ["A) Frontal Lob", "B) Temporal Lob", "C) Parietal Lob", "D) Oksipital Lob", "E) Motor Korteks"], answer: 1, exp: "Açıklama: Temporal lob şakaklarda bulunur; işitme ve dil anlama merkezidir." },
+    { q: "32. Dokunma, sıcaklık ve ağrı gibi somatosensoriyel duyuların işlendiği lob hangisidir?", options: ["A) Parietal Lob", "B) Frontal Lob", "C) Temporal Lob", "D) Oksipital Lob", "E) Beyin Sapı"], answer: 0, exp: "Açıklama: Parietal lob (yan kafa) dokunma ve beden duyularının merkezidir." },
+    { q: "33. Konuşmanın motor üretimi ile ilgili olan alan hangisidir?", options: ["A) Broca Alanı", "B) Wernicke Alanı", "C) Somatosensoriyel Korteks", "D) Premotor Korteks", "E) Görsel Korteks"], answer: 0, exp: "Açıklama: Broca alanı konuşma motor hareketlerini yönetir; hasarında kelime üretilemez." },
+    { q: "34. Fiziksel enerjinin sinirsel sinyallere dönüştürülmesi sürecine ne ad verilir?", options: ["A) Transdüksiyon", "B) Algı", "C) Duyusal Uyum", "D) Eşik", "E) Sinyal Algılama"], answer: 0, exp: "Açıklama: Transdüksiyon, duyu reseptörlerinin çevresel enerjiyi elektriksel sinirlere çevirmesidir." },
+    { q: "35. Bir uyaranın hissedilebilmesi için gereken minimum fiziksel enerji miktarı nedir?", options: ["A) Mutlak Eşik", "B) Fark Eşiği", "C) Weber Oranı", "D) Sinyal Eşiği", "E) Uyum Eşiği"], answer: 0, exp: "Açıklama: Mutlak eşik, bir uyaranın %50 oranında fark edildiği en düşük enerji seviyesidir." },
+    { q: "36. İki uyaran arasındaki farkın algılanabilmesi için gereken minimum değişim nedir?", options: ["A) Fark Eşiği (JND)", "B) Mutlak Eşik", "C) Subliminal Eşik", "D) Duyu Eşiği", "E) Sensorik Limit"], answer: 0, exp: "Açıklama: Fark eşiği (Just Noticeable Difference), iki uyaran arasındaki ayırt edilebilir en küçük farktır." },
+    { q: "37. 'Fark eşiği, orijinal uyaranın şiddetiyle doğru orantılıdır' ilkesini açıklayan yasa hangisidir?", options: ["A) Weber Yasası", "B) Thorndike Yasası", "C) Yer Kuramı", "D) Frekans Kuramı", "E) Stevens Yasası"], answer: 0, exp: "Açıklama: Weber Yasası, fark eşiğinin sabit bir miktar değil, oransal olduğunu belirtir." },
+    { q: "38. Sürekli uyarana maruz kalındığında reseptörlerin duyarlılığının azalmasına ne denir?", options: ["A) Duyusal Uyum", "B) Alışma", "C) Duyarlılaşma", "D) Algısal İllüzyon", "E) Koşullanma"], answer: 0, exp: "Açıklama: Duyusal uyum, değişmeyen uyarana karşı reseptör düzeyinde tepkinin azalmasıdır." },
+    { q: "39. Retinada bulunan, düşük ışıkta ve gece görmede uzmanlaşmış reseptörler hangisidir?", options: ["A) Koniler", "B) Çubuklar (Rods)", "C) Gangliyon Hücreleri", "D) Bipolar Hücreler", "E) Yatay Hücreler"], answer: 1, exp: "Açıklama: Çubuk hücreleri (rodlar) renksiz, karanlıkta ve düşük ışıkta görmeyi sağlar." },
+    { q: "40. Retinada renkli görmeden ve detay/keskinlikten sorumlu hücreler hangisidir?", options: ["A) Çubuklar", "B) Koniler (Cones)", "C) Amakrin Hücreler", "D) Optik Sinirler", "E) Glia Hücreleri"], answer: 1, exp: "Açıklama: Koni hücreleri gündüz ışığında ve renkli görmede aktif olan hücrelerdir." },
+
+    { q: "41. İç kulakta ses dalgalarını sinirsel uyarılara dönüştüren tüy hücrelerinin bulunduğu organ hangisidir?", options: ["A) Corti Organı", "B) Kulak Zarı", "C) Yarım Daire Kanalları", "D) Östaki Borusu", "E) Otolit Organı"], answer: 0, exp: "Açıklama: Corti organı salyangoz içinde yer alır ve işitme reseptörlerini barındırır." },
+    { q: "42. Vücudun dengesi ve başın hareketi hakkında bilgi sağlayan iç kulak sistemi hangisidir?", options: ["A) Kinestetik Duyu", "B) Vestibüler Duyu", "C) Propriyosepsiyon", "D) Taktil Duyu", "E) Somatik Duyu"], answer: 1, exp: "Açıklama: İç kulaktaki yarım daire kanalları vestibüler duyudan (denge) sorumludur." },
+    { q: "43. Kasların ve eklemlerin pozisyonu ile hareketleri hakkında bilgi veren duyu hangisidir?", options: ["A) Kinestezi", "B) Vestibüler Duyu", "C) Nosisepsiyon", "D) Termosepsiyon", "E) Taktil Duyu"], answer: 0, exp: "Açıklama: Kinestezi (propriyosepsiyon) beden uzuvlarının nerede olduğunu hissetmemizi sağlar." },
+    { q: "44. Ağrı duyusunun omurilikte engellenebileceğini savunan teori hangisidir?", options: ["A) Yer Kuramı", "B) Kapı-Kontrol Kuramı", "C) Frekans Kuramı", "D) Karşıt Süreç Kuramı", "E) Trichromatic Kuram"], answer: 1, exp: "Açıklama: Kapı-Kontrol teorisine göre omurilikteki kapılar ağrı sinyallerinin beyne ulaşmasını engelleyebilir." },
+    { q: "45. Göze giren ışık miktarını ayarlayan renkli kas tabakası hangisidir?", options: ["A) İris", "B) Mercek", "C) Sklera", "D) Retina", "E) Kornea"], answer: 0, exp: "Açıklama: İris, gözbebeğinin (pupil) boyutunu daraltıp genişleterek giren ışığı ayarlar." },
+    { q: "46. Nesneler uzaklaşsa da boyut veya şekillerinin aynı algılanmasına ne denir?", options: ["A) Algısal Değişmezlik", "B) Derinlik Algısı", "C) İllüzyon", "D) Halüsinasyon", "E) Şekil-Zemin İlkesi"], answer: 0, exp: "Açıklama: Algısal değişmezlik, duyusal veri değişse de nesne algımızın sabit kalmasıdır." },
+    { q: "47. Beklenti ve geçmiş deneyimlerin algıyı yönlendirmesi sürecine ne ad verilir?", options: ["A) Aşağıdan Yukarıya İşleme", "B) Yukarıdan Aşağıya İşleme", "C) Transdüksiyon", "D) Sensorik Kodlama", "E) Uyum"], answer: 1, exp: "Açıklama: Yukarıdan aşağıya (Top-down) işleme, zihinsel şemaların ve beklentilerin algıyı yönlendirmesidir." },
+    { q: "48. İki gözün farklı açılardan görüntü almasıyla oluşan derinlik ipucu nedir?", options: ["A) Binoküler İpucu (Binocular Disparity)", "B) Monoküler İpucu", "C) Arayagirme", "D) Doğrusal Perspektif", "E) Doku Derecelenmesi"], answer: 0, exp: "Açıklama: Binoküler farklılık iki göz arasındaki mesafe sayesinde derinlik algısı yaratır." },
+    { q: "49. Koşulsuz bir uyarıcıya (ör. yemek) verilen doğal ve öğrenilmemiş tepki nedir?", options: ["A) Koşulsuz Tepki", "B) Koşullu Tepki", "C) Nötr Tepki", "D) Edimsel Tepki", "E) Operant"], answer: 0, exp: "Açıklama: Koşulsuz tepki (UCR) yemeğe verilen salya gibi doğuştan gelen refleksif tepkidir." },
+    { q: "50. Klasik koşullanmada nötr uyaranın koşulsuz uyaranla eşleşmesi sonucu kazandığı durum nedir?", options: ["A) Koşullu Uyaran", "B) Koşulsuz Uyaran", "C) Pekiştireç", "D) Ceza", "E) İçgörü"], answer: 0, exp: "Açıklama: Nötr uyaran (zil), yemekle eşleşince öğrenilmiş tepki çıkaran 'Koşullu Uyaran'a dönüşür." },
+
+    { q: "51. Koşullu uyaranın artık desteklenmemesi sonucu koşullu tepkinin silinmesine ne denir?", options: ["A) Sönme (Extinction)", "B) Kendiliğinden Geri Gelme", "C) Genelleme", "D) Ayırt Etme", "E) Alışma"], answer: 0, exp: "Açıklama: Zil çalınıp yemek verilmezse salya tepkisi bir süre sonra söner." },
+    { q: "52. Davranışların sonuçları (pekiştireç/ceza) ile şekillendiğini savunan öğrenme türü hangisidir?", options: ["A) Klasik Koşullanma", "B) Edimsel Koşullanma", "C) Model Alarak Öğrenme", "D) Gizil Öğrenme", "E) Kavrama Yoluyla Öğrenme"], answer: 1, exp: "Açıklama: Skinner'ın Edimsel Koşullanması davranışın sonuçlarına göre pekiştirilmesini temel alır." },
+    { q: "53. Davranışın sıklığını artırmak için ortama hoşa giden bir uyaran eklenmesine ne denir?", options: ["A) Olumlu Pekiştirme", "B) Olumsuz Pekiştirme", "C) I. Tip Ceza", "D) II. Tip Ceza", "E) Sönme"], answer: 0, exp: "Açıklama: Ödül veya övgü vermek olumlu pekiştirmedir; davranışı artırır." },
+    { q: "54. Davranışı artırmak için ortamdan rahatsız edici bir uyaranın çıkarılmasına ne denir?", options: ["A) Olumsuz Pekiştirme", "B) Olumlu Pekiştirme", "C) Ceza", "D) Sönme", "E) Kaçınma Koşullanması"], answer: 0, exp: "Açıklama: Ağrı kesici alıp ağrıdan kurtulmak olumsuz pekiştirmedir; ilacı alma davranışını artırır." },
+    { q: "55. Bir davranışın yapılma frequency (sıklığını) azaltmak için uygulanan işlem nedir?", options: ["A) Pekiştirme", "B) Ceza", "C) Sönme", "D) Biçimlendirme", "E) Genelleme"], answer: 1, exp: "Açıklama: Ceza her zaman bir davranışın tekrarlanma olasılığını azaltmayı hedefler." },
+    { q: "56. Pekiştirecin sabit bir zaman dilimine göre verilmesi (ör. her ay maaş) hangi tarifedir?", options: ["A) Sabit Oranlı", "B) Değişken Oranlı", "C) Sabit Aralıklı", "D) Değişken Aralıklı", "E) Sürekli Pekiştirme"], answer: 2, exp: "Açıklama: Zaman sabitse (her 5 dakikada bir, her ay vb.) 'Sabit Aralıklı' tarifedir." },
+    { q: "57. Kumar makinelerinde görülen, sönmeye en dirençli pekiştirme tarifesi hangisidir?", options: ["A) Değişken Oranlı", "B) Sabit Aralıklı", "C) Sabit Oranlı", "D) Değişken Aralıklı", "E) Sürekli"], answer: 0, exp: "Açıklama: Değişken oranlı tarifede pekiştirecin kaçıncı davranışta geleceği belirsizdir, bu da bağımlılığı artırır." },
+    { q: "58. Tolman'ın labirent deneyiyle gösterdiği, pekiştireçsiz gerçekleşen öğrenme hangisidir?", options: ["A) Gizil (Latent) Öğrenme", "B) Klasik Koşullanma", "C) Deneme-Yanılma", "D) İçgörüsel Öğrenme", "E) Biçimlendirme"], answer: 0, exp: "Açıklama: Gizil öğrenmede performans hemen ortaya çıkmaz, ihtiyaç anında belirir." },
+    { q: "59. Albert Bandura'nın Bobo Doll deneyi ile açıkladığı teori hangisidir?", options: ["A) Sosyal Öğrenme", "B) Edimsel Koşullanma", "C) Klasik Koşullanma", "D) Bilişsel Harita", "E) Bitişiklik Kuramı"], answer: 0, exp: "Açıklama: Bandura, bireylerin başkalarını gözlemleyerek ve model alarak öğrendiğini kanıtlamıştır." },
+    { q: "60. Bilginin anlık tutulduğu, kapasitesi yüksek fakat süresi çok kısa (1-2 sn) bellek hangisidir?", options: ["A) Duyusal Bellek", "B) Kısa Süreli Bellek", "C) Uzun Süreli Bellek", "D) Çalışan Bellek", "E) Anısal Bellek"], answer: 0, exp: "Açıklama: Duyusal bellek çevreden gelen veriyi işlenmeden önce saliseler seviyesinde tutar." },
+
+    { q: "61. George Miller'a göre kısa süreli belleğin kapasitesi ortalama kaç birimdir?", options: ["A) 7 ± 2", "B) 3 ± 1", "C) 12 ± 2", "D) Sınırsız", "E) 20 ± 5"], answer: 0, exp: "Açıklama: Miller'ın sihirli sayısı '7 ± 2' birimdir (chunk)." },
+    { q: "62. Kişisel deneyimlerin ve otobiyografik anıların depolandığı bellek bölümü hangisidir?", options: ["A) Anısal (Episodik) Bellek", "B) Anlamsal Bellek", "C) İşlemsel Bellek", "D) Kısa Süreli Bellek", "E) Duyusal Bellek"], answer: 0, exp: "Açıklama: Episodik bellek zaman ve mekana bağlı şahsi anılarımızı tutar." },
+    { q: "63. Genel dünya bilgileri, kelime anlamları ve kuralların depolandığı bellek hangisidir?", options: ["A) Semantik (Anlamsal) Bellek", "B) Episodik Bellek", "C) Prosedürel Bellek", "D) Örtük Bellek", "E) Duyusal Bellek"], answer: 0, exp: "Açıklama: Semantik bellek akademik bilgiler, kavramlar ve gerçekler deposudur." },
+    { q: "64. Bisiklete binmek veya araba sürmek gibi motor becerilerin tutulduğu bellek hangisidir?", options: ["A) İşlemsel (Prosedürel) Bellek", "B) Semantik Bellek", "C) Episodik Bellek", "D) Çalışan Bellek", "E) Açık Bellek"], answer: 0, exp: "Açıklama: Prosedürel bellek otomatikleşmiş kas becerilerini saklar." },
+    { q: "65. Yeni öğrenilen bilginin eski bilginin hatırlanmasını engellemesine ne denir?", options: ["A) Geriye Ket Vurma", "B) İleriye Ket Vurma", "C) Amnezi", "D) Represyon", "E) Sönme"], answer: 0, exp: "Açıklama: Yeni bilgi eskiyi unutturuyorsa 'Geriye Ket Vurma' gerçekleşir." },
+    { q: "66. Eski bilgilerin yeni öğrenilen bilgiyi hatırlamayı zorlaştırmasına ne denir?", options: ["A) İleriye Ket Vurma", "B) Geriye Ket Vurma", "C) İz Silinmesi", "D) Bastırma", "E) Yönlendirme"], answer: 0, exp: "Açıklama: Eski bilgi yeninin önüne engel koyuyorsa 'İleriye Ket Vurma'dır." },
+    { q: "67. Hermann Ebbinghaus'un çalışmalarında bellekle ilgili bulduğu temel eğri nedir?", options: ["A) Unutma Eğrisi", "B) İleriye Ket Vurma", "C) Seri Pozisyon Etkisi", "D) Bilgi İşleme Modeli", "E) Bilişsel Harita"], answer: 0, exp: "Açıklama: Ebbinghaus unutmanın öğrenmeden hemen sonraki ilk saatlerde en hızlı yaşandığını bulmuştur." },
+    { q: "68. Listenin başındaki ve sonundaki kelimelerin ortadakilerden iyi hatırlanması nedir?", options: ["A) Seri Pozisyon Etkisi", "B) Unutma Eğrisi", "C) Flaş Bellek", "D) Bilişsel Çelişki", "E) Zihinsel Kurulum"], answer: 0, exp: "Açıklama: Seri pozisyon etkisi öncelik (primacy) ve sonralık (recency) etkilerinin birleşimidir." },
+    { q: "69. Beyinde anıların kararlı hale gelip uzun süreli belleğe sabitlenmesi sürecine ne denir?", options: ["A) Konsolidasyon", "B) Kodlama", "C) Çağrışım", "D) Kod Çözme", "E) Depolama"], answer: 0, exp: "Açıklama: Konsolidasyon, nöronal düzeyde bellek izlerinin sağlamlaşmasıdır." },
+    { q: "70. Piaget'ye göre çocukların dünyayı anlamak için oluşturduğu zihinsel şablon nedir?", options: ["A) Şema", "B) Özümleme", "C) Uyumsama", "D) Dengeleme", "E) Korunum"], answer: 0, exp: "Açıklama: Şemalar bilgiyi kategorize ettiğimiz temel zihinsel yapılardır." },
+
+    { q: "71. Yeni bir bilginin var olan şemaya aynen dahil edilmesine ne denir?", options: ["A) Özümleme (Assimilation)", "B) Uyumsama", "C) Korunum", "D) Nesne Devamlılığı", "E) Odaktan Uzaklaşma"], answer: 0, exp: "Açıklama: Özümleme, yeni durumu eski kalıba uydurmaktır (ör. Kuşu bilen çocuğun uçağa kuş demesi)." },
+    { q: "72. Yeni durum karşısında var olan şemanın değiştirilmesine ne ad verilir?", options: ["A) Uyumsama (Accommodation)", "B) Özümleme", "C) Nesne Devamlığı", "D) Benmerkezcilik", "E) Korunum"], answer: 0, exp: "Açıklama: Uyumsama, şemanın yeni bilgiye göre revize edilmesidir." },
+    { q: "73. Bebeklerin gözden kaybolan nesnenin yok olmadığını anlaması kazanımı nedir?", options: ["A) Nesne Devamlılığı", "B) Korunum", "C) Benmerkezcilik", "D) Soyut Düşünme", "E) Tersine Çevrilebilirlik"], answer: 0, exp: "Açıklama: Nesne devamlılığı yaklaşık 8. ayda kazanılan kritik bir gelişim aşamasıdır." },
+    { q: "74. İşlem öncesi çocukların başkalarının bakış açısını görememesine ne denir?", options: ["A) Egosantrizm (Benmerkezcilik)", "B) Özel Dil", "C) Animizm", "D) Odaklanma", "E) Korunumsuzluk"], answer: 0, exp: "Açıklama: Benmerkezci çocuk herkesin dünyayı kendisi gibi gördüğünü zanneder." },
+    { q: "75. Maddenin şekli değişse de miktarının aynı kaldığının anlaşılması nedir?", options: ["A) Korunum İlkesi", "B) Nesne Devamlığı", "C) Bilişsel Harita", "D) Şema Yapılandırması", "E) İçgörü"], answer: 0, exp: "Açıklama: Korunum ilkesi somut işlemler döneminde kazanılır." },
+    { q: "76. Vygotsky'ye göre çocuğun tek başına yapabileceği ile rehberle yapabileceği arasındaki alan nedir?", options: ["A) Yakınsal Gelişim Alanı (ZPD)", "B) Yapı İskelesi", "C) Özümleme Alanı", "D) Bilişsel Şema", "E) Gelişimsel Eşik"], answer: 0, exp: "Açıklama: ZPD (Zone of Proximal Development) potansiyel öğrenme kapasitesini belirler." },
+    { q: "77. Erikson'a göre bebeklik döneminin (0-1 yaş) temel psikososyal krizi nedir?", options: ["A) Temel Güvene Karşı Güvensizlik", "B) Özerkliğe Karşı Utanç", "C) Girişimciliğe Karşı Suçluluk", "D) Kimlik Karmaşası", "E) Aşağılık Duygusu"], answer: 0, exp: "Açıklama: Bebeklikte bakıcının tutarlılığı güven hissinin temelini atar." },
+    { q: "78. Erikson'a göre ergenlik dönemindeki (12-18 yaş) temel kriz hangisidir?", options: ["A) Kimlik Kazanımına Karşı Rol Karmaşası", "B) Yakınlığa Karşı Yalnızlık", "C) Üretkenlik", "D) Özerklik", "E) Bütünlük"], answer: 0, exp: "Açıklama: Ergenlik ben kimim sorusunun sorulduğu kimlik arayışı evresidir." },
+    { q: "79. Kohlberg'de kurallara sadece cezadan kaçınmak için uyulan seviye hangisidir?", options: ["A) Gelenek Öncesi Düzey", "B) Geleneksel Düzey", "C) Gelenek Ötesi Düzey", "D) Özerk Düzey", "E) Evrensel Ahlak"], answer: 0, exp: "Açıklama: Gelenek öncesi dönemde ceza ve ödül odaklı dışsal bir ahlak anlayışı vardır." },
+    { q: "80. Kohlberg'e göre toplumun yasalarına ve sosyal düzene uyma odaklı seviye nedir?", options: ["A) Geleneksel Düzey", "B) Gelenek Öncesi Düzey", "C) Gelenek Ötesi Düzey", "D) Güdüsel Düzey", "E) Bilişsel Düzey"], answer: 0, exp: "Açıklama: Geleneksel düzeyde 'Kanun ve Düzen' uyumu esastır." },
+
+    { q: "81. Freud'un kişilik yapısında ilkel arzuları ve haz ilkesini temsil eden yapı nedir?", options: ["A) İd", "B) Ego", "C) Süperego", "D) Libido", "E) Persona"], answer: 0, exp: "Açıklama: İd tamamen doğuştan gelir, mantıksızdır ve anlık haz ister." },
+    { q: "82. Gerçeklik ilkesine göre çalışan ve İd ile Süperego'yu dengeleyen yapı hangisidir?", options: ["A) Ego", "B) İd", "C) Süperego", "D) Gölge", "E) Kolektif Bilinçdışı"], answer: 0, exp: "Açıklama: Ego mantığın sesidir; İd'in isteklerini gerçekliğe uygun olarak doyurmaya çalışır." },
+    { q: "83. Toplumsal kuralları, ahlakı ve vicdanı temsil eden kişilik bileşeni nedir?", options: ["A) Süperego", "B) Ego", "C) İd", "D) Kompleks", "E) Libido"], answer: 0, exp: "Açıklama: Süperego aile ve toplum tarafından öğretilen moral ve ahlaki değerlerin içselleşmiş halidir." },
+    { q: "84. Doğal gözlem yönteminin deneysel yönteme göre en büyük avantaj ve dezavantajı nedir?", options: ["A) Avantajı dış geçerliliğin yüksek olması, dezavantajı nedensellik kurulamamasıdır.", "B) Avantajı nedensellik kurabilmesi, dezavantajı pahalı olmasıdır.", "C) Avantajı kontrol imkanı, dezavantajı içebakış gerektirmesidir.", "D) Avantajı plasebo etkisi, dezavantajı miyelin kılıftır.", "E) Hiçbiri"], answer: 0, exp: "Açıklama: Doğal gözlemde yapallık yoktur (dış geçerlilik yüksek), ancak kontrol olamadığı için neden-sonuç belirlenemez." },
+    { q: "85. Aksiyon potansiyelinin oluşumunda (-55 mV eşiğinde) hücre içine hızla giren iyon hangisidir?", options: ["A) Potasyum (K+)", "B) Sodyum (Na+)", "C) Kalsiyum (Ca2+)", "D) Klor (Cl-)", "E) Protein"], answer: 1, exp: "Açıklama: Eşik aşılınca voltaj kapılı Sodyum (Na+) kanalları açılır ve Na+ içeri hücum eder." },
+    { q: "86. Na+/K+ pompasının temel hücresel görevi nedir?", options: ["A) Hücre içine su almak", "B) ATP harcayarak 3 Na+ dışarı atıp 2 K+ içeri almak ve dinlenme potansiyelini korumak", "C) Aksiyon potansiyelini durdurmak", "D) Asetilkolini yok etmek", "E) Glia üretmek"], answer: 1, exp: "Açıklama: Sodyum-potasyum pompası aktif taşıma ile hücrenin dinlenme potansiyelini (-70 mV) muhafaza eder." },
+    { q: "87. Beynin sağ hemisferinin baskın olduğu alanlardan biri hangisidir?", options: ["A) Dil bilgisi ve matematik", "B) Uzamsal ilişkiler, yüz tanıma ve bütüncül algı", "C) Konuşma motoru", "D) Yazma becerisi", "E) Mantıksal dizi"], answer: 1, exp: "Açıklama: Sağ yarıküre mekansal boyutlar, sanat, yüz tanıma ve bütüncül işleme konularında uzmandır." },
+    { q: "88. Hangisi sinaptik temizlik mekanizmalarından biri değildir?", options: ["A) Geri alım (Reuptake)", "B) Enzimatik yıkım", "C) Difüzyon", "D) Sıçramalı eksokitoz pompalanması", "E) Aralıktan sızma"], answer: 3, exp: "Açıklama: Sinapstaki nörotransmitterler reuptake, enzimatik yıkım veya difüzyon ile temizlenir." },
+    { q: "89. Aksiyon potansiyeli zirvesinde (+40 mV) ne gerçekleşir?", options: ["A) Na+ kanalları kapanır, K+ kanalları açılır", "B) K+ kanalları kapanır", "C) Klor kanalları açılır", "D) Na pompası durur", "E) Hiçbiri"], answer: 0, exp: "Açıklama: Zirvede Na+ girişi durur, K+ kanalları açılarak potasyum dışarı çıkar ve repolarizasyon başlar." },
+    { q: "90. Retinaya ışığın net düşmesi için şekil değiştiren esnek yapı hangisidir?", options: ["A) Mercek (Lens)", "B) Pupil", "C) Fovea", "D) Optik kiyazma", "E) Kör nokta"], answer: 0, exp: "Açıklama: Göz merceği (lens) uzağa ve yakına bakarken kavisini değiştirerek uyum (accommodation) yapar." },
+
+    { q: "91. 1905 yılında ilk pratik zeka testini geliştiren bilim insanı kimdir?", options: ["A) Alfred Binet", "B) William James", "C) Wilhelm Wundt", "D) Ivan Pavlov", "E) John B. Watson"], answer: 0, exp: "Açıklama: Alfred Binet, okul çağındaki çocukların desteğe ihtiyacı olup olmadığını belirlemek için ilk zeka ölçeğini yapmıştır." },
+    { q: "92. Pavlov ve Watson'ın çalışmaları hangi ekolün doğuşunu sağlamıştır?", options: ["A) Psikoanaliz", "B) Davranışçılık (Behaviorism)", "C) İşlevselcilik", "D) Gestalt", "E) Hümanizm"], answer: 1, exp: "Açıklama: Öğrenme ve koşullanma üzerine yapılan bu deneysel çalışmalar Davranışçılık ekolünü oluşturmuştur." },
+    { q: "93. Ses dalgaları çekiç-örs-üzengi üzerinden iç kulaktaki hangi yapıya ulaşır?", options: ["A) Salyangoz (Cochlea)", "B) Yarım daire kanalları", "C) Olfaktör ampul", "D) Optik kiyazma", "E) Fovea"], answer: 0, exp: "Açıklama: Kemikçikler titreşimi sıvı dolu salyangoza (cochlea) iletir." },
+    { q: "94. Beyin sapındaki Pons'un temel görevlerinden biri nedir?", options: ["A) Anı depolamak", "B) Uyku/uyanıklık döngüsü ve REM uykusu kas felcini düzenlemek", "C) Koku iletmek", "D) Sıcaklık ayarı", "E) El hareketleri"], answer: 1, exp: "Açıklama: Pons, uyku evrelerinde ve rüya görülürken (REM) beden kaslarının felç edilmesinde anahtar role sahiptir." },
+    { q: "95. Bir araştırmada sonucun sadece bağımsız değişkenden kaynaklandığından emin olmaya ne denir?", options: ["A) İç Geçerlilik", "B) Dış Geçerlilik", "C) Replikasyon", "D) Tutarlılık", "E) Örneklem"], answer: 0, exp: "Açıklama: İç geçerlilik (Internal Validity), karıştırıcı değişkenlerin ne kadar iyi kontrol edildiğini gösterir." },
+    { q: "96. Kapı-Kontrol Kuramına göre ovuşturmak veya masaj yapmak ağrıyı nasıl hafifletir?", options: ["A) Kalsiyumu tüketerek", "B) Dokunma duyusunu taşıyan kalın lifleri uyarıp kapıyı kapatarak", "C) Talamusu kapatarak", "D) Hiperpolarizasyon yaparak", "E) Kortizol salgılayarak"], answer: 1, exp: "Açıklama: Dokunma duyusu kalın sinir lifleriyle hızlı iletilir ve omurilikteki ağrı kapısını kapatır." },
+    { q: "97. Eşik aşıldığında aksiyon potansiyelinin genliğinin hep aynı kalması ilkesi nedir?", options: ["A) Weber Yasası", "B) Hep ya da Hiç İlkesi", "C) Sıçramalı İletim", "D) Transdüksiyon", "E) Karşıt Süreç"], answer: 1, exp: "Açıklama: Hep ya da Hiç kuralına göre uyarının şiddeti ne olursa olsun nöron ya tam güçte sinyal üretir ya da hiç üretmez." },
+    { q: "98. Hangisi Limbik Sistem yapıları arasında yer almaz?", options: ["A) Amigdala", "B) Hipokampus", "C) Medulla Oblongata", "D) Hipotalamus", "E) Limbik Korteks"], answer: 2, exp: "Açıklama: Medulla Oblongata (omurilik soğanı) beyin sapına aittir, temel yaşamsal refleksleri yönetir." },
+    { q: "99. Retinadaki Koniler hakkında hangisi YANLIŞTIR?", options: ["A) Foveada yoğunlaşmışlardır", "B) 3 farklı tipi vardır", "C) Zifiri karanlıkta çubuklardan daha etkindirler", "D) Detaylı görmeyi sağlarlar", "E) Sayıları çubuklardan azdır"], answer: 2, exp: "Açıklama: Koniler karanlıkta çalışmaz, karanlıkta ve gece görüşünde çubuklar (rodlar) etkindir." },
+    { q: "100. Psikolojide bir teoriden türetilen, test edilebilir tahmine ne denir?", options: ["A) Hipotez", "B) Postülat", "C) Korelasyon", "D) Ölçek", "E) Replikasyon"], answer: 0, exp: "Açıklama: Hipotez bilimsel yöntemle sınanabilir, doğrulanabilir veya yanlışlanabilir önermedir." }
+];
+
+let correctCount = 0;
+let incorrectCount = 0;
+let remainingCount = quizData.length;
+
+function renderQuiz() {
+    const container = document.getElementById('quiz-container');
+    
+    quizData.forEach((data, index) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.id = `q-${index}`;
+
+        const title = document.createElement('div');
+        title.className = 'question-title';
+        title.innerText = data.q;
+        card.appendChild(title);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'options';
+
+        data.options.forEach((opt, optIndex) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, optIndex);
+            optionsDiv.appendChild(btn);
+        });
+
+        card.appendChild(optionsDiv);
+
+        const expDiv = document.createElement('div');
+        expDiv.className = 'explanation';
+        expDiv.id = `exp-${index}`;
+        expDiv.innerText = data.exp;
+        card.appendChild(expDiv);
+
+        container.appendChild(card);
+    });
+}
+
+function checkAnswer(qIndex, selectedOptIndex) {
+    const question = quizData[qIndex];
+    const card = document.getElementById(`q-${qIndex}`);
+    const buttons = card.querySelectorAll('.option-btn');
+    const expDiv = document.getElementById(`exp-${qIndex}`);
+
+    // Butonları kilitle
+    buttons.forEach(btn => btn.disabled = true);
+
+    if (selectedOptIndex === question.answer) {
+        buttons[selectedOptIndex].classList.add('correct');
+        correctCount++;
+    } else {
+        buttons[selectedOptIndex].classList.add('incorrect');
+        buttons[question.answer].classList.add('correct');
+        incorrectCount++;
+    }
+
+    remainingCount--;
+    
+    // Skor güncelle
+    document.getElementById('correct-count').innerText = correctCount;
+    document.getElementById('incorrect-count').innerText = incorrectCount;
+    document.getElementById('remaining-count').innerText = remainingCount;
+
+    // Açıklamayı göster
+    expDiv.classList.add('visible');
+}
+
+// Uygulamayı başlat
+renderQuiz();
+</script>
+</body>
+</html>
